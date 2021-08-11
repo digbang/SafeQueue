@@ -42,33 +42,40 @@ use Throwable;
     }
 
     /**
-     * Wrap parent::runJob to make sure we have a good EM.
+     * Wrap parent::getNextJob to make sure we have a good EM before process the job
      *
-     * Most exception handling is done in the parent method, so we consider any new
-     * exceptions to be a result of our setup.
+     * Get the next job from the queue connection.
      *
-     * @param \Illuminate\Contracts\Queue\Job $job
-     * @param string                          $connectionName
-     * @param WorkerOptions                   $options
+     * @param  \Illuminate\Contracts\Queue\Queue  $connection
+     * @param  string  $queue
+     * @return \Illuminate\Contracts\Queue\Job|null
      */
-    protected function runJob($job, $connectionName, WorkerOptions $options)
+    protected function getNextJob($connection, $queue)
     {
+        $failure = null;
+
         try {
             $this->assertEntityManagerOpen();
             $this->assertEntityManagerClear();
             $this->assertGoodDatabaseConnection();
-
-            parent::runJob($job, $connectionName, $options);
         } catch (EntityManagerClosedException $e) {
+            $failure = $e;
             $this->exceptions->report($e);
-            $this->stop(1);
         } catch (Exception $e) {
+            $failure = $e;
             $this->exceptions->report(new QueueSetupException("Error in queue setup while running a job", 0, $e));
-            $this->stop(1);
         } catch (Throwable $e) {
+            $failure = $e;
             $this->exceptions->report(new QueueSetupException("Error in queue setup while running a job", 0, new FatalThrowableError($e)));
-            $this->stop(1);
+        } finally {
+            if ($failure) {
+                $this->stopSafeQueueWorker();
+
+                return null;
+            }
         }
+
+        return parent::getNextJob($connection, $queue);
     }
 
     /**
@@ -104,5 +111,10 @@ use Throwable;
             $connection->close();
             $connection->connect();
         }
+    }
+
+    public function stopSafeQueueWorker()
+    {
+        $this->shouldQuit = true;
     }
 }
