@@ -42,7 +42,8 @@ use Throwable;
     }
 
     /**
-     * Wrap parent::getNextJob to make sure we have a good EM before process the job
+     * Wrap parent::getNextJob to make sure we have a good EM before processing the job.
+     * This allows us to avoid incrementing the attempts on the job if the worker fails because of the EM.
      *
      * Get the next job from the queue connection.
      *
@@ -52,27 +53,25 @@ use Throwable;
      */
     protected function getNextJob($connection, $queue)
     {
-        $failure = null;
+        $exception = null;
 
         try {
             $this->assertEntityManagerOpen();
             $this->assertEntityManagerClear();
             $this->assertGoodDatabaseConnection();
         } catch (EntityManagerClosedException $e) {
-            $failure = $e;
-            $this->exceptions->report($e);
+            $exception = $e;
         } catch (Exception $e) {
-            $failure = $e;
-            $this->exceptions->report(new QueueSetupException("Error in queue setup while running a job", 0, $e));
+            $exception = new QueueSetupException("Error in queue setup while running a job", 0, $e);
         } catch (Throwable $e) {
-            $failure = $e;
-            $this->exceptions->report(new QueueSetupException("Error in queue setup while running a job", 0, new FatalThrowableError($e)));
-        } finally {
-            if ($failure) {
-                $this->stopSafeQueueWorker();
+            $exception = new QueueSetupException("Error in queue setup while running a job", 0, new FatalThrowableError($e));
+        } 
+        
+        if ($exception) {
+            $this->stopSafeQueueWorker();
+            $this->exceptions->report($exception);
 
-                return null;
-            }
+            return null;
         }
 
         return parent::getNextJob($connection, $queue);
