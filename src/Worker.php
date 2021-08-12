@@ -13,7 +13,7 @@ use Illuminate\Queue\WorkerOptions;
 use Symfony\Component\Debug\Exception\FatalThrowableError;
 use Throwable;
 
-/*final*/ class Worker extends IlluminateWorker
+class Worker extends IlluminateWorker
 {
     /**
      * @var EntityManagerInterface
@@ -42,8 +42,8 @@ use Throwable;
     }
 
     /**
-     * Wrap parent::getNextJob to make sure we have a good EM before processing the job.
-     * This allows us to avoid incrementing the attempts on the job if the worker fails because of the EM.
+     * Wrap parent::getNextJob to make sure we have a good EM before processing the next job.
+     * This allow us to avoid incrementing the attempts on the job if the worker fails because of the EM.
      *
      * Get the next job from the queue connection.
      *
@@ -62,13 +62,13 @@ use Throwable;
         } catch (EntityManagerClosedException $e) {
             $exception = $e;
         } catch (Exception $e) {
-            $exception = new QueueSetupException("Error in queue setup while running a job", 0, $e);
+            $exception = new QueueSetupException("Error in queue setup while getting next job", 0, $e);
         } catch (Throwable $e) {
-            $exception = new QueueSetupException("Error in queue setup while running a job", 0, new FatalThrowableError($e));
+            $exception = new QueueSetupException("Error in queue setup while getting next job", 0, new FatalThrowableError($e));
         } 
         
         if ($exception) {
-            $this->stopSafeQueueWorker();
+            $this->shouldQuit = true;
             $this->exceptions->report($exception);
 
             return null;
@@ -110,10 +110,5 @@ use Throwable;
             $connection->close();
             $connection->connect();
         }
-    }
-
-    public function stopSafeQueueWorker()
-    {
-        $this->shouldQuit = true;
     }
 }
