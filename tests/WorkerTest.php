@@ -15,8 +15,9 @@ use Illuminate\Queue\Worker as IlluminateWorker;
 use Illuminate\Queue\WorkerOptions;
 use Digbang\SafeQueue\Worker;
 use Mockery as m;
+use PHPUnit\Framework\TestCase;
 
-class WorkerTest extends \PHPUnit_Framework_TestCase
+class WorkerTest extends TestCase
 {
     /**
      * @var QueueManager|m\MockInterface
@@ -63,7 +64,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     private $options;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->queueManager  = m::mock(QueueManager::class);
         $this->queue         = m::mock(Queue::class);
@@ -87,7 +88,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         $this->entityManager->shouldReceive('getConnection')->andReturn($this->dbConnection);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         m::close();
     }

@@ -3,13 +3,14 @@
 
 namespace tests\Digbang\SafeQueue\Console;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
-use Digbang\SafeQueue\Console\WorkCommand;
-use Digbang\SafeQueue\Worker;
 use Mockery as m;
 use ReflectionClass;
+use Digbang\SafeQueue\Worker;
+use PHPUnit\Framework\TestCase;
+use Digbang\SafeQueue\Console\WorkCommand;
+use Illuminate\Contracts\Cache\Repository as Cache;
 
-class WorkCommandTest extends \PHPUnit_Framework_TestCase
+class WorkCommandTest extends TestCase
 {
     /**
      * @var Worker|m\MockInterface
@@ -41,7 +42,7 @@ class WorkCommandTest extends \PHPUnit_Framework_TestCase
      */
     private $configStub;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->worker              = m::mock(Worker::class);
         $this->cache               = m::mock(Cache::class);
