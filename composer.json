@@ -18,7 +18,7 @@
     ],
     "require": {
         "php": "^8.1",
-        "illuminate/queue": "^10.0",
+        "illuminate/queue": "^11.0",
         "laravel-doctrine/orm": "^2.0"
     },
     "require-dev": {
